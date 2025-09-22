@@ -206,6 +206,98 @@ CREATE TABLE shipments (
 
 
 
+-- 14. Create Product Reviews Table (One-to-Many with Products and Customers)
+CREATE TABLE product_reviews (
+    -> review_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    -> product_id INT NOT NULL,
+    -> customer_id INT NOT NULL,
+    -> order_id BIGINT NULL,
+    -> rating TINYINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    -> title VARCHAR(255),
+    -> body TEXT,
+    -> is_verified_purchase BOOLEAN DEFAULT FALSE,
+    -> helpful_votes INT DEFAULT 0,
+    -> created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -> 
+    -> FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
+    -> FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE RESTRICT,
+    -> FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE SET NULL
+    -> );
+
+
+-- 15. Create Wishlists Table (Many-to-Many relationship between Customers and Products)
+CREATE TABLE wishlists (
+    -> wishlist_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> customer_id INT NOT NULL,
+    -> product_id INT NOT NULL,
+    -> added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->     
+    -> FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    -> FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
+    -> UNIQUE KEY unique_customer_product_wishlist (customer_id, product_id)
+    -> );
+
+
+-- 16. Create Coupons Table (For Discounts and Promotions)
+CREATE TABLE coupons (
+    -> coupon_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> coupon_code VARCHAR(50) UNIQUE NOT NULL,
+    -> coupon_name VARCHAR(100) NOT NULL,
+    -> description TEXT,
+    -> discount_type VARCHAR(20) NOT NULL, -- 'Percentage' or 'Fixed'
+    -> discount_value DECIMAL(10,2) NOT NULL CHECK (discount_value > 0),
+    -> minimum_order_amount DECIMAL(10,2) DEFAULT 0,
+    -> maximum_discount_amount DECIMAL(10,2) NULL,
+    -> usage_limit INT NULL,
+    -> used_count INT DEFAULT 0,
+    -> start_date DATE NOT NULL,
+    -> end_date DATE NOT NULL,
+    -> is_active BOOLEAN DEFAULT TRUE,
+    -> created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->     
+    -> CHECK (end_date >= start_date)
+    -> );
+
+
+-- 17. Create Order_Coupons Table (Many-to-Many relationship between Orders and Coupons)
+CREATE TABLE order_coupons (
+    -> order_coupon_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> order_id BIGINT NOT NULL,
+    -> coupon_id INT NOT NULL,
+    -> discount_amount DECIMAL(10,2) NOT NULL CHECK (discount_amount >= 0),
+    -> applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->     
+    -> FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    -> FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id) ON DELETE RESTRICT
+    -> );
+
+
+-- 18. Create Inventory Transactions Table (To track stock changes)
+CREATE TABLE inventory_transactions (
+    -> transaction_id INT PRIMARY KEY AUTO_INCREMENT,
+    -> product_id INT NOT NULL,
+    -> transaction_type VARCHAR(20) NOT NULL, -- 'Stock In', 'Stock Out', 'Adjustment', 'Return'
+    -> quantity_change INT NOT NULL,
+    -> previous_quantity INT NOT NULL,
+    -> new_quantity INT NOT NULL,
+    -> reference_type VARCHAR(20) NOT NULL, -- 'Purchase', 'Sale', 'Return', 'Adjustment'
+    -> reference_id INT NULL,
+    -> notes TEXT,
+    -> created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -> created_by INT NULL,
+    ->     
+    -> FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE RESTRICT,
+    -> FOREIGN KEY (created_by) REFERENCES customers(customer_id) ON DELETE SET NULL
+    -> );
+
+-- Indexes for performance optimization
+-- customers table indexes
+CREATE INDEX idx_customers_email ON customers(email);
+CREATE INDEX idx_customers_addresses_customer_id ON customers_addresses(customer_id);
+
+
+
+
 
 
 
